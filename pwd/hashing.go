@@ -16,6 +16,20 @@ import (
 )
 
 // ------------------
+// Public interfaces
+// ------------------
+
+// Hasher implements password hashing methods.
+type Hasher interface {
+	ComputeHash(string) string
+}
+
+// Validator implements password validation methods.
+type Validator interface {
+	ValidatePassword(password string, passwordHash string) (ok bool, needsUpgrade bool)
+}
+
+// ------------------
 // Private Types
 // ------------------
 
@@ -39,18 +53,14 @@ type passwordHash struct {
 	base64Hash string
 }
 
-// Type to generate password hashes.
-type passwordHasher struct {
-	generateSalt generateSaltFunc
-	computeHash  computeHashFunc
-	strategy     string
-}
-
-// Type to validate password hashes.
-type passwordValidator struct {
-	parsePasswordHash  parsePasswordHashFunc
-	computeHashFactory computeHashFactoryFunc
-	defaultStrategy    string
+// Returns the string representation of a passwordHash.
+// Use this value to store in a database.
+func (pwdh *passwordHash) String() string {
+	return fmt.Sprintf(
+		"%s.%s.%s",
+		pwdh.strategy,
+		pwdh.base64Salt,
+		pwdh.base64Hash)
 }
 
 // ------------------
@@ -65,7 +75,7 @@ var supportedStrategies = map[string]computeHashFactoryFunc{
 	"pbkdf2": createPbkdf2Fn}
 
 // ------------------
-// Hashing Factories
+// Private helper functions
 // ------------------
 
 // Factory method to create the PBKDF2 key stretching algorithm.
@@ -121,38 +131,6 @@ func createPasswordHashingStrategy(strategy string) (computeHashFunc, error) {
 	return nil, errInvalidStrategy
 }
 
-func newHasher(
-	generateSalt generateSaltFunc,
-	computeHashFactory computeHashFactoryFunc,
-	strategy string) *passwordHasher {
-
-	computeHash, err := computeHashFactory(strategy)
-
-	if err != nil {
-		panic(fmt.Errorf("failed to create a hash function: %w", err))
-	}
-
-	return &passwordHasher{
-		generateSalt: generateSalt,
-		computeHash:  computeHash,
-		strategy:     strategy}
-}
-
-func newValidator(
-	parsePasswordHash parsePasswordHashFunc,
-	computeHashFactory computeHashFactoryFunc,
-	defaultStrategy string) *passwordValidator {
-
-	return &passwordValidator{
-		parsePasswordHash:  parsePasswordHash,
-		computeHashFactory: computeHashFactory,
-		defaultStrategy:    defaultStrategy}
-}
-
-// ------------------
-// Private helper functions
-// ------------------
-
 func parsePasswordHash(pwdh string) (*passwordHash, error) {
 	errInvalidPwdh := fmt.Errorf("string is not a valid passwordHash: %v", pwdh)
 
@@ -192,20 +170,34 @@ func parsePasswordHash(pwdh string) (*passwordHash, error) {
 }
 
 // ------------------
-// Private type Methods
+// Hash Generator
 // ------------------
 
-// Returns the string representation of a passwordHash.
-// Use this value to store in a database.
-func (pwdh *passwordHash) String() string {
-	return fmt.Sprintf(
-		"%s.%s.%s",
-		pwdh.strategy,
-		pwdh.base64Salt,
-		pwdh.base64Hash)
+// Type to generate password hashes.
+type HashGenerator struct {
+	generateSalt generateSaltFunc
+	computeHash  computeHashFunc
+	strategy     string
 }
 
-func (h *passwordHasher) computePasswordHash(password string) *passwordHash {
+func newHasher(
+	generateSalt generateSaltFunc,
+	computeHashFactory computeHashFactoryFunc,
+	strategy string) *HashGenerator {
+
+	computeHash, err := computeHashFactory(strategy)
+
+	if err != nil {
+		panic(fmt.Errorf("failed to create a hash function: %w", err))
+	}
+
+	return &HashGenerator{
+		generateSalt: generateSalt,
+		computeHash:  computeHash,
+		strategy:     strategy}
+}
+
+func (h *HashGenerator) computePasswordHash(password string) *passwordHash {
 	salt := h.generateSalt(32)
 	hash := h.computeHash([]byte(password), salt)
 
@@ -217,10 +209,36 @@ func (h *passwordHasher) computePasswordHash(password string) *passwordHash {
 		base64Hash: base64.StdEncoding.EncodeToString(hash)}
 }
 
-func (v *passwordValidator) validatePassword(password string, pwdh *passwordHash) (ok bool, isHashOutdated bool) {
+func (h *HashGenerator) ComputeHash(password string) string {
+	return h.computePasswordHash(password).String()
+}
+
+// ------------------
+// Hash Validator
+// ------------------
+
+// Type to validate password hashes.
+type HashValidator struct {
+	parsePasswordHash  parsePasswordHashFunc
+	computeHashFactory computeHashFactoryFunc
+	defaultStrategy    string
+}
+
+func newValidator(
+	parsePasswordHash parsePasswordHashFunc,
+	computeHashFactory computeHashFactoryFunc,
+	defaultStrategy string) *HashValidator {
+
+	return &HashValidator{
+		parsePasswordHash:  parsePasswordHash,
+		computeHashFactory: computeHashFactory,
+		defaultStrategy:    defaultStrategy}
+}
+
+func (v *HashValidator) validatePassword(password string, pwdh *passwordHash) (ok bool, needsUpgrade bool) {
 	// Set default return values
 	ok = false
-	isHashOutdated = false
+	needsUpgrade = false
 
 	// Return early if nothing to compare
 	if password == "" || pwdh == nil {
@@ -238,29 +256,11 @@ func (v *passwordValidator) validatePassword(password string, pwdh *passwordHash
 
 	// Set return values and finish
 	ok = compare.Hashes(pwdh.hash, computedHash)
-	isHashOutdated = ok && pwdh.strategy != v.defaultStrategy
+	needsUpgrade = ok && pwdh.strategy != v.defaultStrategy
 	return
 }
 
-// ------------------
-// Exported
-// ------------------
-
-// Hasher implements password hashing methods.
-type Hasher interface {
-	ComputeHash(string) string
-}
-
-// Validator implements password validation methods.
-type Validator interface {
-	ValidatePassword(password string, passwordHash string) (ok bool, isHashOutdated bool)
-}
-
-func (h *passwordHasher) ComputeHash(password string) string {
-	return h.computePasswordHash(password).String()
-}
-
-func (v *passwordValidator) ValidatePassword(password string, passwordHash string) (ok bool, isHashOutdated bool) {
+func (v *HashValidator) ValidatePassword(password string, passwordHash string) (bool, bool) {
 	pwdh, err := v.parsePasswordHash(passwordHash)
 	if err != nil {
 		return false, false
@@ -268,8 +268,12 @@ func (v *passwordValidator) ValidatePassword(password string, passwordHash strin
 	return v.validatePassword(password, pwdh)
 }
 
+// ------------------
+// Exported
+// ------------------
+
 // NewHasher creates a new Hasher instance.
-func NewHasher() Hasher {
+func NewHashGenerator() *HashGenerator {
 	return newHasher(
 		rng.GenerateBytes,
 		createPasswordHashingStrategy,
@@ -277,7 +281,7 @@ func NewHasher() Hasher {
 }
 
 // NewValidator creates a new Validator instance.
-func NewValidator() Validator {
+func NewHashValidator() *HashValidator {
 	return newValidator(
 		parsePasswordHash,
 		createPasswordHashingStrategy,

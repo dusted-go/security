@@ -129,7 +129,7 @@ func Test_ValidatePassword_WithCorrectPassword_ReturnsTrue(t *testing.T) {
 	expectedResult := true
 	expectedUpgrade := false
 
-	validator := NewValidator()
+	validator := NewHashValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)
@@ -142,7 +142,7 @@ func Test_ValidatePassword_WithWrongPassword_ReturnsFalse(t *testing.T) {
 	expectedResult := false
 	expectedUpgrade := false
 
-	validator := NewValidator()
+	validator := NewHashValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)
@@ -155,7 +155,7 @@ func Test_ValidatePassword_WithCorrectPasswordAndOutdatedHash_ReturnsTrueAndTrue
 	expectedResult := true
 	expectedUpgrade := true
 
-	validator := NewValidator()
+	validator := NewHashValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)
