@@ -75,7 +75,7 @@ func Test_ComputePasswordHash_WithPBKDF2_ReturnsCorrectHash(t *testing.T) {
 
 	hasher := newHasher(
 		generateSaltMock,
-		func(string) (computeHashFunc, error) { return computeHash, nil },
+		func(string) (hashFunc, error) { return computeHash, nil },
 		strategy)
 	actual := hasher.ComputeHash("Just4Now!2019")
 
@@ -96,7 +96,7 @@ func Test_ComputePasswordHash_WithPBKDF2and5Iterations_ReturnsCorrectHash(t *tes
 
 	hasher := newHasher(
 		generateSaltMock,
-		func(string) (computeHashFunc, error) { return computeHash, nil },
+		func(string) (hashFunc, error) { return computeHash, nil },
 		strategy)
 	actual := hasher.ComputeHash("Just4Now!2019")
 
@@ -116,7 +116,7 @@ func Test_ComputePasswordHash_WithPBKDF2andSmallHashLengthAndLowIterations_Retur
 
 	hasher := newHasher(
 		generateSaltMock,
-		func(string) (computeHashFunc, error) { return computeHash, nil },
+		func(string) (hashFunc, error) { return computeHash, nil },
 		strategy)
 	actual := hasher.ComputeHash("Just4Now!2019")
 
@@ -129,7 +129,7 @@ func Test_ValidatePassword_WithCorrectPassword_ReturnsTrue(t *testing.T) {
 	expectedResult := true
 	expectedUpgrade := false
 
-	validator := NewHashValidator()
+	validator := NewValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)
@@ -142,7 +142,7 @@ func Test_ValidatePassword_WithWrongPassword_ReturnsFalse(t *testing.T) {
 	expectedResult := false
 	expectedUpgrade := false
 
-	validator := NewHashValidator()
+	validator := NewValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)
@@ -155,7 +155,7 @@ func Test_ValidatePassword_WithCorrectPasswordAndOutdatedHash_ReturnsTrueAndTrue
 	expectedResult := true
 	expectedUpgrade := true
 
-	validator := NewHashValidator()
+	validator := NewValidator()
 	actual, requiresUpgrade := validator.ValidatePassword(password, pwdHash)
 
 	areEqual(t, expectedResult, actual)

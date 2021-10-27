@@ -11,11 +11,7 @@ import (
 )
 
 // Validator can validate and decrypt a signed token.
-type Validator interface {
-	Validate(kind string, token string) (data []byte, err error)
-}
-
-type validator struct {
+type Validator struct {
 	now           func() time.Time
 	encryptionKey []byte
 	signingKey    []byte
@@ -23,27 +19,23 @@ type validator struct {
 
 // NewValidator creates a new token validator.
 func NewValidator(
-	now func() time.Time,
 	encryptionKey []byte,
-	signingKey []byte) Validator {
-	if now == nil {
-		panic("now function parameter cannot be nil.")
-	}
+	signingKey []byte) *Validator {
 	if encryptionKey == nil {
 		panic("encryptionKey parameter cannot be nil.")
 	}
 	if signingKey == nil {
 		panic("signingKey parameter cannot be nil.")
 	}
-	return &validator{
-		now:           now,
+	return &Validator{
+		now:           time.Now,
 		encryptionKey: encryptionKey,
 		signingKey:    signingKey,
 	}
 }
 
 // CreateValidateFunc creates a new `tokens.ValidateFunc` function.
-func (v *validator) Validate(kind string, token string) (verifiedData []byte, err error) {
+func (v *Validator) Validate(kind string, token string) (verifiedData []byte, err error) {
 	// 0. Set default return values
 	errToken := errors.New("token is missing, invalid or has expired")
 

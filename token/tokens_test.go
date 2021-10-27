@@ -17,7 +17,6 @@ func Test_RoundTrip(t *testing.T) {
 
 	generator :=
 		NewGenerator(
-			time.Now,
 			encryptionKey,
 			signingKey)
 
@@ -28,7 +27,6 @@ func Test_RoundTrip(t *testing.T) {
 
 	validator :=
 		NewValidator(
-			time.Now,
 			encryptionKey,
 			signingKey)
 

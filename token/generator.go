@@ -10,11 +10,7 @@ import (
 )
 
 // Generator allows to generate signed and encrypted tokens.
-type Generator interface {
-	Generate(kind string, data []byte, ttl time.Duration) (token string, err error)
-}
-
-type generator struct {
+type Generator struct {
 	now           func() time.Time
 	encryptionKey []byte
 	signingKey    []byte
@@ -22,26 +18,22 @@ type generator struct {
 
 // NewGenerator creates a new token generator.
 func NewGenerator(
-	now func() time.Time,
 	encryptionKey []byte,
-	signingKey []byte) Generator {
-	if now == nil {
-		panic("now function parameter cannot be nil.")
-	}
+	signingKey []byte) *Generator {
 	if encryptionKey == nil {
-		panic("encryptionKey parameter cannot be nil.")
+		panic("encryptionKey cannot be nil.")
 	}
 	if signingKey == nil {
-		panic("signingKey parameter cannot be nil.")
+		panic("signingKey cannot be nil.")
 	}
-	return &generator{
-		now:           now,
+	return &Generator{
+		now:           time.Now,
 		encryptionKey: encryptionKey,
 		signingKey:    signingKey,
 	}
 }
 
-func (g *generator) Generate(kind string, data []byte, ttl time.Duration) (string, error) {
+func (g *Generator) Generate(kind string, data []byte, ttl time.Duration) (string, error) {
 	// 1. Generate expiry date
 	expiry := g.now().UTC().Add(ttl)
 
