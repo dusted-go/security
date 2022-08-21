@@ -1,6 +1,6 @@
 module github.com/dusted-go/security
 
-go 1.17
+go 1.19
 
 require (
 	github.com/dusted-go/encoding v1.0.0
