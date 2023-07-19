@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+## 1.3.0
+
+- Changed password policy validation messages to start with capital letter.
+- token.Validator will return expiry date as well
+
 ## 1.2.0
 
 The `token.Validator` will return more detailed error messages.

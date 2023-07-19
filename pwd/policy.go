@@ -23,7 +23,7 @@ func genericValidateFunc(match matchFunc, minCount int, group string) validateFu
 		}
 		if count < minCount {
 			ok = false
-			errMsg = fmt.Sprintf("password must have at least %v %v", minCount, group)
+			errMsg = fmt.Sprintf("Password must have at least %v %v", minCount, group)
 		}
 		return
 	}
@@ -78,7 +78,7 @@ func SpecialCharCheck(minCount int) validateFunc {
 func LengthCheck(minLength int) validateFunc {
 	return func(password string) (ok bool, errMsg string) {
 		if len(password) < minLength {
-			return false, fmt.Sprintf("password does not meet the minimum length of %v characters", minLength)
+			return false, fmt.Sprintf("Password does not meet the minimum length of %v characters", minLength)
 		}
 		return true, ""
 	}

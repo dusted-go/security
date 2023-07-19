@@ -263,7 +263,7 @@ func (v *Validator) validatePassword(p string, pwdh *passwordHash) (ok bool, nee
 	return
 }
 
-func (v *Validator) ValidatePassword(password string, passwordHash string) (bool, bool) {
+func (v *Validator) ValidatePassword(password string, passwordHash string) (ok bool, needsUpgrade bool) {
 	if v.parseHash == nil {
 		panic("parseHash cannot be nil")
 	}

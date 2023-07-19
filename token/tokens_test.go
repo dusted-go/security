@@ -30,7 +30,7 @@ func Test_RoundTrip(t *testing.T) {
 			encryptionKey,
 			signingKey)
 
-	verifiedData, err := validator.Validate("1", token)
+	verifiedData, _, err := validator.Validate("1", token)
 	if err != nil {
 		t.Error("Unexpected error when validating token:", err.Error())
 	}
