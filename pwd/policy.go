@@ -97,7 +97,7 @@ func Policy(funcs ...validateFunc) PolicyFunc {
 }
 
 // DefaultPolicy creates the default password policy.
-var DefaultPolicy PolicyFunc = Policy(
+var DefaultPolicy = Policy(
 	LengthCheck(8),
 	UpperCaseCheck(1),
 	LowerCaseCheck(1),

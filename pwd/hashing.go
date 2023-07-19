@@ -55,7 +55,7 @@ func (pwdh *passwordHash) String() string {
 // ------------------
 
 // Current default hashing strategy.
-var defaultStrategy string = "pbkdf2/hmacsha256/12/G8"
+var defaultStrategy = "pbkdf2/hmacsha256/12/G8"
 
 // Map of currently supported hashing strategies.
 var supportedStrategies = map[string]hashFuncFactory{
